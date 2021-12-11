@@ -52,7 +52,7 @@ module.exports = {
     		let utility_arr = Array.from(utility_map) 
 
 			const helpEmbed = new Discord.MessageEmbed()
-			.setTitle('**The A.G.E.N.C.Y\'s commands!** ')
+			.setTitle(`**${message.client.user.tag}'s commands!** `)
 			.setAuthor(user.username, user.avatarURL(), message.author.avatarURL())
 			.setDescription(`This is a list of all of my commands. To see more about a specific command, just type **${prefix}help <command>**!`)
 			.addFields(
@@ -104,7 +104,6 @@ module.exports = {
 				{ name: '`🥶` Cooldown', value: cooldown, inline: false},
 			)
 			.setTimestamp()
-			.setFooter('james bond boii', 'https://live.staticflickr.com/37/125194301_8134c3db54_b.jpg');
 
 			return message.channel.send(helpEmbed);
 	},
