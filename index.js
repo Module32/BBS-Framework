@@ -8,8 +8,6 @@ const fs = require('fs');
 const Discord = require('discord.js');
 var { prefix, token } = require('./config.json');
 const client = new Discord.Client();
-const disbut = require('discord-buttons');
-disbut(client);
 const eventFiles = fs.readdirSync('./events').filter(file => file.endsWith('.js'));
 
 // Setting up
@@ -33,6 +31,51 @@ for (const folder of commandFolders) {
 		client.commands.set(command.name, command);
 	}
 }
+
+const distube = require('distube');
+client.distube = new distube(client, { searchSongs: false, emitNewSongOnly: true })
+client.distube
+	.on('playSong', (message, queue, song) => {
+        const embed = new Discord.MessageEmbed()
+			.setTitle(`\`🎶\` **${song.name}**`)
+        	.setURL(song.link)
+        	.setThumbnail(song.thumbnail)
+        	.addFields(
+                { name: "Duration", value: `\`${song.formattedDuration}\``, inline: true },
+                { name: "Link", value: `${song.url}`, inline: true },
+                { name: "Requested By", value: `${song.user}`, inline: true },
+                { name: "Likes", value: `\`${String(song.likes).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
+                { name: "Dislikes", value: `\`${String(song.dislikes).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
+                { name: "Views", value: `\`${String(song.views).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
+                { name: "Live", value: `*${song.isLive}*`, inline: true },
+                { name: "ID", value: `*${song.id}*`, inline: true },
+                { name: "Reposts", value: `*${song.reposts}*`, inline: true },
+            )
+        	.setColor('5124e3')
+        	.setAuthor(`${message.author.username} - Now playing:`, message.author.avatarURL())
+        	.setTimestamp()
+        	.setFooter("AGENCY music stuff")
+    	message.channel.send(embed)
+			})
+	.on('addSong', (message, queue, song) => {
+        const embed = new Discord.MessageEmbed()
+			.setTitle(`\`🎶\` Added **${song.name}** to the queue`)
+        	.setURL(song.link)
+        	.setThumbnail(song.thumbnail)
+        	.addFields(
+                { name: "Duration", value: `\`${song.formattedDuration}\``, inline: true },
+                { name: "Requested By", value: `${song.user}`, inline: true },
+            )
+        	.setColor('5124e3')
+        	.setAuthor(`${message.author.username}`, message.author.avatarURL())
+        	.setTimestamp()
+        	.setFooter("AGENCY music stuff")
+    	message.channel.send(embed)
+			})
+	.on('error', (message, e) => {
+		console.error(e)
+		message.reply(`**I ran into an error:** \`${e}\``)
+	})
 	
 // On message event
 client.on('message', message => {
