@@ -82,7 +82,7 @@ client.on('message', message => {
 	try {
 		let prefixes = db.fetch(`prefix_${message.guild.id}`);
 		if (!prefixes) {
-			prefix = "+"
+			prefix = prefix
 		} else {
             if (message.channel.type == 'dm') {
                 
