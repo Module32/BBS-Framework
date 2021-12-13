@@ -16,11 +16,11 @@ With the BBS Framework, clients will see a big surplus of benefits that come wit
 - Less buggy software (as the framework will have already been tested)
 - More consistent design in your bot
 
-However, as with any software, it's important to recognize some of the cons. The BBS Framework will change a few things our previous clients may have liked, including:
-- More personal and customized bots
-- A unique design theme for their bot
+However, as with any software, it's important to recognize some of the cons. The BBS Framework will bring about a few changes our previous clients may not like as much anymore. These include:
+- Less personal and not as customized bots
+- No unique design theme for each individual bot
 
-We hope that this new concept will be well-received both in our client community as well as our developer team. Thanks a ton for supporting BBS and its endeavors. We can't wait to bring even more changes to improve the experience for everyone.
+However, we hope that this new concept will be well-received both in our client community as well as our developer team. Thanks a ton for supporting BBS and its endeavors. We can't wait to bring even more changes to improve the experience for everyone.
 
 -Module64, _BBS co-founder_
 
