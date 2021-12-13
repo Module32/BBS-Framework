@@ -9,7 +9,6 @@ module.exports = {
     execute(message, args) {
         let channel = message.mentions.channels.first();
         if (!channel) return message.channel.send(`${message.author}, **please provide a channel!**`)
-        if (channel.type !== "text") return message.reply("**please provide a *text* channel!**")
         db.set(`community_announcement_channel_${message.guild.id}`, channel.id)
         user = message.author
         const welcomeChannelEmbed = new Discord.MessageEmbed()
