@@ -24,7 +24,7 @@ module.exports = {
 
     setTimeout(function(){
       tomute.roles.remove(muterole.id);
-      message.channel.send(`<@${tomute.id}> has been unmuted!`);
+      message.channel.send(`<@${tomute.id}> has been unmuted!\n\n**TIP:** if the user doesn't appear to be muted, check to make sure the bot role is higher than the mute role!`);
     }, ms(mutetime));
   }
 
