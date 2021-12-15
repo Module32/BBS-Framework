@@ -11,3 +11,5 @@ Packages:
    quick.db
 
    discord.js@12.5.3
+
+   weky
