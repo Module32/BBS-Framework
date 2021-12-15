@@ -1,4 +1,4 @@
-var { prefix } = require('./config.json');
+var { prefix } = require('../config.json');
 
 module.exports = {
     name: "ready",
