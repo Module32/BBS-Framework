@@ -19,5 +19,6 @@ module.exports = {
             .setFooter(`Announced by ${message.author.username}`)
         thechan = message.guild.channels.cache.get(chan);
         thechan.send(announcementembed)
+        message.channel.send(`:white_check_mark: - Message announced!`)
     }
 }
