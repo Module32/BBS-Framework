@@ -1,15 +1,4 @@
-var { prefix } = require('../config.json');
-
-module.exports = {
-    name: "ready",
-    execute(client, message) {
-      console.log(`${client.user.tag} is ready!`)
-      client.user.setPresence({
-              status: 'dnd',
-              activity: {
-               type: 'WATCHING',
-               name: `${prefix}help || Developed on BBS`,
-              },
-             });
-  }
-  }
+module.exports = async (client) => {
+  console.log(`Logged in as ${client.user.username}. Ready on ${client.guilds.cache.size} servers, for a total of ${client.users.cache.size} users`);
+  client.user.setPresence({ activities: [{ name: 'with BBS' }] });
+};

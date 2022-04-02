@@ -1,197 +1,132 @@
-/*
-The BBS Framework -- Designed by the BBS dev team.
-*/
-
-// Imports
-var db = require('quick.db');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
-const Discord = require('discord.js');
-var { prefix, token } = require('./config.json');
-const client = new Discord.Client();
-const eventFiles = fs.readdirSync('./events').filter(file => file.endsWith('.js'));
+const db = require('quick.db');
 
-// Setting up
-for (const file of eventFiles) {
-	const event = require(`./events/${file}`);
-	if (event.once) {
-		client.once(event.name, (...args) => event.execute(...args, client));
-	} else {
-		client.on(event.name, (...args) => event.execute(...args, client));
-	}
+const { Client, Intents, Collection, MessageEmbed, MessageActionRow, MessageSelectMenu, MessageButton } = require('discord.js');
+const client = new Client({
+    intents: [
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MESSAGES
+    ]
+});
+
+client.commands = new Collection();
+client.config = require('./config.js')
+client.emotes = client.config.emojis;
+
+const commands = [];
+
+fs.readdirSync('./commands').forEach(dirs => {
+const commandFiles = fs.readdirSync(`./commands/${dirs}`).filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+	const command = require(`./commands/${dirs}/${file}`);
+	commands.push(command.data.toJSON());
+    client.commands.set(command.data.name, command);
+    console.log(`Loading interaction ${file}`)
 }
-let blacklist = [];
-client.commands = new Discord.Collection();
-client.cooldowns = new Discord.Collection();
-const commandFolders = fs.readdirSync('./commands');
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const folder of commandFolders) {
-	const commandFiles = fs.readdirSync(`./commands/${folder}`).filter(file => file.endsWith('.js'));
-	for (const file of commandFiles) {
-		const command = require(`./commands/${folder}/${file}`);
-		client.commands.set(command.name, command);
-	}
-}
+})
 
-const distube = require('distube');
-client.distube = new distube(client, { searchSongs: false, emitNewSongOnly: true })
-client.distube
-	.on('playSong', (message, queue, song) => {
-        const embed = new Discord.MessageEmbed()
-			.setTitle(`\`🎶\` **${song.name}**`)
-        	.setURL(song.link)
-        	.setThumbnail(song.thumbnail)
-        	.addFields(
-                { name: "Duration", value: `\`${song.formattedDuration}\``, inline: true },
-                { name: "Link", value: `${song.url}`, inline: true },
-                { name: "Requested By", value: `${song.user}`, inline: true },
-                { name: "Likes", value: `\`${String(song.likes).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
-                { name: "Dislikes", value: `\`${String(song.dislikes).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
-                { name: "Views", value: `\`${String(song.views).replace(/(.)(?=(\d{3})+$)/g,'$1,')}\``, inline: true },
-                { name: "Live", value: `*${song.isLive}*`, inline: true },
-                { name: "ID", value: `*${song.id}*`, inline: true },
-                { name: "Reposts", value: `*${song.reposts}*`, inline: true },
-            )
-        	.setColor('5124e3')
-        	.setAuthor(`${message.author.username} - Now playing:`, message.author.avatarURL())
-        	.setTimestamp()
-        	.setFooter("AGENCY music stuff")
-    	message.channel.send(embed)
-			})
-	.on('addSong', (message, queue, song) => {
-        const embed = new Discord.MessageEmbed()
-			.setTitle(`\`🎶\` Added **${song.name}** to the queue`)
-        	.setURL(song.link)
-        	.setThumbnail(song.thumbnail)
-        	.addFields(
-                { name: "Duration", value: `\`${song.formattedDuration}\``, inline: true },
-                { name: "Requested By", value: `${song.user}`, inline: true },
-            )
-        	.setColor('5124e3')
-        	.setAuthor(`${message.author.username}`, message.author.avatarURL())
-        	.setTimestamp()
-        	.setFooter("AGENCY music stuff")
-    	message.channel.send(embed)
-			})
-	.on('error', (message, e) => {
-		console.error(e)
-		message.reply(`**I ran into an error:** \`${e}\``)
-	})
-	
-// On message event
-client.on('message', message => {
+// Place your client and guild ids here
+const clientId = '952383128947798066';
+const guildId = '849615161005965343';
+
+const events = fs.readdirSync('./events').filter(file => file.endsWith('.js'));
+
+for (const file of events) {
+    console.log(`Loading discord.js event ${file}`);
+    const event = require(`./events/${file}`);
+    client.on(file.split(".")[0], event.bind(null, client));
+};
+
+const rest = new REST({ version: '9' }).setToken(client.config.discord.token);
+
+(async () => {
 	try {
-		let prefixes = db.fetch(`prefix_${message.guild.id}`);
-		if (!prefixes) {
-			prefix = prefix
-		} else {
-            if (message.channel.type == 'dm') {
-                
-            } else {
-                prefix = prefixes;
-            }
-    }
-	} catch (err) {
-		console.log(err);
-	}
+		console.log('Started refreshing interactions (/)');
 
-    // Check if bot mentioned
-	if (message.mentions.has(client.user.id)) {
-		if (message.author.bot) return;
-    	if (message.content.includes("@here") || message.content.includes("@everyone")) return;
-		const mentionedEmbed = new Discord.MessageEmbed()
-        	.setTitle(`Hi! I'm **${client.user.tag}**.`)
-			.setDescription(`Use \`${prefix}help\` to see my commands :D`)
-            .setColor('ffdb63')
-        	.setFooter("Developed on BBS")
-			.setTimestamp()
-		message.channel.send(mentionedEmbed);
-	}
-	if (!message.content.startsWith(prefix) || message.author.bot) return;
-	
-    for (let value of blacklist) {
-        if (value === message.author.id) {
-            return;
-    }
-    }
-    
-    // Get command
-	const args = message.content.slice(prefix.length).trim().split(/ +/);
-	const commandName = args.shift().toLowerCase();
+		await rest.put(
+			Routes.applicationGuildCommands(clientId, guildId),
+			{ body: commands },
+		);
 
-	if (!client.commands.has(commandName)) return;
-	const command = client.commands.get(commandName) || client.commands.find(c => c.aliases && c.aliases.includes(commandName));
-	if (!command) {
-		return message.reply("EEEE");
-	}
-	if (command.guildOnly && message.channel.type === 'dm') {
-		const dmerrorEmbed = new Discord.MessageEmbed()
-			.setDescription('```❌ This command cannot be executed in DMs```')
-			.setTimestamp()
-        	.setColor('ff1241')
-		message.channel.send(dmerrorEmbed);
-	}
-
-    // Checking permissions and correct usage
-	if (command.permissions) {
-		try {
-			if (!message.member.hasPermission(command.permissions)) {
-				const permserrorEmbed = new Discord.MessageEmbed()
-				.setDescription(`\`\`\`❌ You do not have permission to use the ${command.name} command\`\`\``)
-				.setTimestamp()
-                .setColor('ff1241')
-			return message.reply(permserrorEmbed);
-			}
-		} catch (err) {
-			console.log(err);
-		}
-	}
-
-	if (command.args && !args.length) {
-		let usage = ''
-
-		if (command.usage) {
-			usage += `${prefix}${command.name} ${command.usage}`
-		} else {
-			usage += "**No usage.**"
-		}
-
-		user = message.author
-		const missingArgsEmbed = new Discord.MessageEmbed()
-			.setDescription(`❌ **Incorrect command usage** \`\`\`YOUR USAGE: ${message.content}\nACTUAL USAGE: ${usage}\`\`\``)
-			.setTimestamp()
-        	.setColor('ff1241')
-		return message.channel.send(missingArgsEmbed);
-	}
-
-	const { cooldowns } = client;
-
-	if (!cooldowns.has(command.name)) {
-		cooldowns.set(command.name, new Discord.Collection());
-	}
-
-    // Cooldown message
-	const now = Date.now();
-	const timestamps = cooldowns.get(command.name);
-	const cooldownAmount = (command.cooldown || 3) * 1000;
-
-	if (timestamps.has(message.author.id)) {
-		const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
-
-		if (now < expirationTime) {
-			const timeLeft = (expirationTime - now) / 1000;
-			return message.reply(`Please wait ${timeLeft.toFixed(1)} more second(s) before using the **\`${command.name}\`** command again!`);
-		}
-	}
-
-	timestamps.set(message.author.id, now);
-	setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
-
-	try {
-        command.execute(message, args);
+		console.log('Successfully reloaded Interactions (/)');
 	} catch (error) {
 		console.error(error);
 	}
+})();
+
+client.on('interactionCreate', async interaction => {
+	if (!interaction.isCommand()) {
+    	if (interaction.isButton()) {
+        	if (interaction.customId === "delallwarns") {
+                let row = new MessageActionRow()
+                    .addComponents(
+                        new MessageButton()
+                                .setCustomId('confirmdelallwarns')
+                                .setLabel('Yes, delete them all')
+                                .setStyle('DANGER')
+                    	);
+                let row2 = new MessageActionRow()
+                    .addComponents(
+                        new MessageButton()
+                                .setCustomId('canceldelallwarns')
+                                .setLabel('Nevermind, don\'t delete all warns')
+                                .setStyle('GREEN'),
+                    	);
+                let delwarn_user = db.get(`delwarn_${interaction.user.id}`);
+                const user2 = await interaction.guild.members.fetch(delwarn_user)
+                const embed = new MessageEmbed()
+                    .setTitle(`**Are you sure you want to delete this user\'s warns?**`)
+                	.setDescription(`To **cancel,** don't respond to this embed.`)
+                    .setTimestamp()
+
+                await interaction.channel.send({ embeds: [ embed ], components: [ row ] })
+            } else if (interaction.customId === "confirmdelallwarns") {
+                let delwarn_user = db.get(`delwarn_${interaction.user.id}`);
+                let count = db.get(`warncount_${delwarn_user}`) || 0;
+                console.log(delwarn_user, count);
+                for (let i = count; i > 0; i--) {
+                    console.log(i);
+                    try {
+                        console.log(i);
+                        let deleted = db.delete(`warn-${delwarn_user}-${i}`);
+                        console.log(deleted);
+                    } catch (err) {
+                        console.log(err);
+                    }
+                }
+                db.set(`warncount_${delwarn_user.id}`, 0);
+                return interaction.channel.send({ content: "Successfully deleted all warns!" })
+            }
+        }
+        if (interaction.isSelectMenu()) {
+           if (interaction.customId === "delwarn") {
+                let val = interaction.values[0];
+               	let delwarn_user = db.get(`delwarn_${interaction.user.id}`);
+                let warn = db.get(`warn-${delwarn_user}-${val}`);
+                if (!warn) return interaction.channel.send({ content: "I couldn't find that warn... that's odd..." });
+                db.delete(`warn-${delwarn_user}-${val}`);
+                console.log(`warn-${delwarn_user}-${val}`)
+
+                await interaction.channel.send(`✅ Warn ${warn.id} has been deleted.`)
+            } 
+        }
+    };
+
+	const command = client.commands.get(interaction.commandName);
+    if (!command) return;
+    if (interaction.commandName === "delwarn") {
+        let delwarn_user = interaction.options.getUser('user').id;
+        db.set(`delwarn_${interaction.user.id}`, delwarn_user);
+    }
+    try {
+        command.execute(interaction);
+    } catch (error) {
+        console.log(error);
+        interaction.reply({ content: `I encountered an error! Please report this to BBS with the following message: \`${error}\``, ephemeral: true })
+    }
 });
 
-// Run bot
-client.login(token);
+client.login(client.config.discord.token)
